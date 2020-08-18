@@ -1,0 +1,338 @@
+---
+
+
+##
+# Configure DNS resolution
+
+- name: Check for required parameters
+  when: vars[item] is undefined
+  fail:
+    msg: "{{ item }} is undefined and required for configuration"
+  loop:
+    - resolv_domain
+    - resolv_search
+    - resolv_nameservers
+    - time_sources
+
+########
+# Configure resolver
+
+- name: Resolver file stat
+  stat:
+    path: /etc/resolv.conf
+  register: resolve_file_state
+
+- name: Remove /etc/resolv.conf (link)
+  when: resolve_file_state.stat.islnk | default(true)
+  file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Configure resolver
+  template:
+    dest: /etc/resolv.conf
+    src: resolv.conf.j2
+    owner: root
+    group: root
+    mode: 0644
+
+########
+# Configure hostname
+
+- name: Configure hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+########
+# SELinux configuration
+
+- name: Disable SELinux (Config) (CentOS)
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: "^SELINUX="
+    line: "SELINUX=permissive"
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Disable SELinux (Oper) (CentOS)
+  command: /sbin/setenforce 0
+  when: ansible_distribution == "CentOS"
+
+##
+# Install packages
+
+- name: Microsoft Ubuntu signing key install (Ubuntu)
+  apt_key:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install PowerShell Repo (Ubuntu)
+  apt:
+    deb: https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+  when: ansible_distribution == "Ubuntu"
+
+- name: Update Apt cache
+  apt:
+    update_cache: yes
+  ignore_errors: true
+  changed_when: false
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Packages (Ubuntu)
+  apt:
+    state: present
+    name:
+      - curl
+      - rsync
+      - software-properties-common
+      - python3
+      - python-pip
+      - apt-transport-https
+      - ca-certificates
+      - parted
+      - lsof
+      - git
+      - vim
+      - screen
+      - open-vm-tools
+      - ntp
+      - sudo
+      - ntpstat
+      - ntpdate
+      - iptables-persistent
+      - zfsutils-linux
+      - powershell
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Packages (CentOS)
+  yum:
+    state: present
+    name:
+      - curl
+      - rsync
+      - lsof
+      - vim
+      - screen
+      - sudo
+      - open-vm-tools
+      - ntp
+      - ntpdate
+      - iptables-services
+  when: ansible_distribution == "CentOS"
+
+##
+# Remove packages
+
+- name: Remove Packages
+  package:
+    state: absent
+    name:
+      - cloud-init
+      - ufw
+      - firewalld
+
+##
+# Base groups
+
+- name: Ensure groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - sudo
+    - wheel
+    - remotessh
+    - npwsudo
+
+##
+# Base Firewall configuration
+- name: Configure base firewall
+  include_tasks: "{{ playbook_dir }}/lib/firewall-base.yml"
+
+- name: Save Firewall Configuration
+  include_tasks: "{{ playbook_dir}}/lib/firewall-save.yml"
+
+##
+# Sudoers configuration
+
+- name: Configure nopassword sudoers file
+  copy:
+    src: npwsudo
+    dest: /etc/sudoers.d/npwsudo
+    owner: root
+    group: root
+    mode: "0640"
+
+- name: Remove cloud-init sudoers
+  file:
+    path: /etc/sudoers.d/90-cloud-init-users
+    state: absent
+
+- name: /etc/sudoers content
+  copy:
+    dest: /etc/sudoers
+    src: sudoers
+    owner: root
+    group: root
+    mode: "0640"
+
+##
+# SSH Configuration
+
+- name: Set default SSH service parameters
+  set_fact:
+    ssh_service: ssh
+    ssh_template: sshd_config.ubuntu
+    ssh_service_state: "started"
+
+- name: Set SSH service name (CentOS)
+  set_fact:
+    ssh_service: sshd
+    ssh_template: sshd_config.centos
+  when: ansible_distribution == "CentOS"
+
+- name: SSHD Configuration
+  copy:
+    src: "{{ ssh_template }}"
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0644"
+  register: sshd_config
+
+- name: Set restart for SSH
+  set_fact:
+    ssh_service_state: "restarted"
+  when: sshd_config.changed
+
+- name: SSH Server Enabled
+  service:
+    name: "{{ ssh_service }}"
+    enabled: yes
+    state: "{{ ssh_service_state }}"
+
+########
+# Timezone configuration
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+
+########
+# VM Tools Configuration
+
+- name: Enable open-vm-tools service (Ubuntu)
+  service:
+    name: open-vm-tools
+    enabled: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Enable open-vm-tools service (CentOS)
+  service:
+    name: vmtoolsd
+    enabled: yes
+  when: ansible_distribution == "CentOS"
+
+
+########
+# Time synchronisation
+
+- name: Set default NTP service name
+  set_fact:
+    ntp_service: ntp
+    ntp_service_state: "started"
+
+- name: Set NTP service name (CentOS)
+  set_fact:
+    ntp_service: ntpd
+  when: ansible_distribution == "CentOS"
+
+- name: Update NTP configuration
+  template:
+    dest: /etc/ntp.conf
+    group: root
+    owner: root
+    mode: 0644
+    src: ntp.conf.j2
+  register: ntp_config
+
+- name: NTP refresh
+  set_fact:
+    ntp_service_state: "restarted"
+  when: ntp_config.changed
+
+- name: NTP Service Enable
+  service:
+    name: "{{ ntp_service }}"
+    state: "{{ ntp_service_state }}"
+    enabled: yes
+
+########
+# Vim Configuration
+
+- name: Vim Configuration Global
+  copy:
+    dest: /etc/vim/vimrc.local
+    src: vimrc.local
+    owner: root
+    group: root
+    mode: "0644"
+
+##
+# Screen Configuration
+
+- name: Configure screen
+  copy:
+    src: screenrc
+    dest: /etc/screenrc
+    owner: root
+    group: root
+    mode: "0644"
+
+########
+# Enable services
+
+- name: Enable services (Ubuntu)
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - netfilter-persistent
+    - ssh
+    - ntp
+  when: ansible_distribution == "Ubuntu"
+
+- name: Enable services (CentOS)
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - iptables
+    - sshd
+    - ntpd
+  when: ansible_distribution == "CentOS"
+
+########
+# Configure user accounts
+
+- name: Configure admin user accounts
+  user:
+    name: "{{ item }}"
+    create_home: yes
+    append: true
+    group: "{{ item }}"
+    groups: sudo,wheel,remotessh,npwsudo
+    shell: /bin/bash
+    state: present
+  loop: "{{ admin_users }}"
+  when: admin_users is defined
+
+- name: Configure trusted keys
+  with_dict: "{{ trusted_keys }}"
+  when: trusted_keys is defined
+  include_tasks: user="{{ item.key }}" user_keys="{{ item.value }}" "{{ playbook_dir }}/lib/trustedkeys.yml"
+
+...
