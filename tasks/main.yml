@@ -1,45 +1,18 @@
 ---
 
 
-##
+########
 # Configure DNS resolution
 
-- name: Check for required parameters
-  when: vars[item] is undefined
-  fail:
-    msg: "{{ item }} is undefined and required for configuration"
-  loop:
-    - resolv_domain
-    - resolv_search
-    - resolv_nameservers
-    - time_sources
-
-########
-# Configure resolver
-
-- name: Resolver file stat
-  stat:
-    path: /etc/resolv.conf
-  register: resolve_file_state
-
-- name: Remove /etc/resolv.conf (link)
-  when: resolve_file_state.stat.islnk | default(true)
-  file:
-    path: /etc/resolv.conf
-    state: absent
-
-- name: Configure resolver
-  template:
-    dest: /etc/resolv.conf
-    src: resolv.conf.j2
-    owner: root
-    group: root
-    mode: 0644
+- name: Resolver configuration
+  when: resolver_domain is defined or resolver_search is defined or resolver_nameservers is defined
+  include_tasks: "resolver.yml"
 
 ########
 # Configure hostname
 
 - name: Configure hostname
+  when: update_hostname is true
   hostname:
     name: "{{ inventory_hostname }}"
 
@@ -96,11 +69,7 @@
       - vim
       - screen
       - open-vm-tools
-      - ntp
       - sudo
-      - ntpstat
-      - ntpdate
-      - iptables-persistent
       - zfsutils-linux
       - powershell
   when: ansible_distribution == "Ubuntu"
@@ -116,9 +85,6 @@
       - screen
       - sudo
       - open-vm-tools
-      - ntp
-      - ntpdate
-      - iptables-services
   when: ansible_distribution == "CentOS"
 
 ##
@@ -129,88 +95,23 @@
     state: absent
     name:
       - cloud-init
-      - ufw
-      - firewalld
-
-##
-# Base groups
-
-- name: Ensure groups exist
-  group:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - sudo
-    - wheel
-    - remotessh
-    - npwsudo
 
 ##
 # Base Firewall configuration
-- name: Configure base firewall
-  include_tasks: "{{ playbook_dir }}/lib/firewall-base.yml"
-
-- name: Save Firewall Configuration
-  include_tasks: "{{ playbook_dir}}/lib/firewall-save.yml"
+- name: Iptables configuration
+  include_tasks: iptables.yml
 
 ##
 # Sudoers configuration
 
-- name: Configure nopassword sudoers file
-  copy:
-    src: npwsudo
-    dest: /etc/sudoers.d/npwsudo
-    owner: root
-    group: root
-    mode: "0640"
-
-- name: Remove cloud-init sudoers
-  file:
-    path: /etc/sudoers.d/90-cloud-init-users
-    state: absent
-
-- name: /etc/sudoers content
-  copy:
-    dest: /etc/sudoers
-    src: sudoers
-    owner: root
-    group: root
-    mode: "0640"
+- name: Sudoers configuration
+  include_tasks: sudoers.yml
 
 ##
 # SSH Configuration
 
-- name: Set default SSH service parameters
-  set_fact:
-    ssh_service: ssh
-    ssh_template: sshd_config.ubuntu
-    ssh_service_state: "started"
-
-- name: Set SSH service name (CentOS)
-  set_fact:
-    ssh_service: sshd
-    ssh_template: sshd_config.centos
-  when: ansible_distribution == "CentOS"
-
-- name: SSHD Configuration
-  copy:
-    src: "{{ ssh_template }}"
-    dest: /etc/ssh/sshd_config
-    owner: root
-    group: root
-    mode: "0644"
-  register: sshd_config
-
-- name: Set restart for SSH
-  set_fact:
-    ssh_service_state: "restarted"
-  when: sshd_config.changed
-
-- name: SSH Server Enabled
-  service:
-    name: "{{ ssh_service }}"
-    enabled: yes
-    state: "{{ ssh_service_state }}"
+- name: sshd configuration
+  include_tasks: sshd.yml
 
 ########
 # Timezone configuration
@@ -218,6 +119,7 @@
 - name: Set timezone
   timezone:
     name: "{{ timezone }}"
+  when: "timezone is defined"
 
 ########
 # VM Tools Configuration
@@ -234,39 +136,11 @@
     enabled: yes
   when: ansible_distribution == "CentOS"
 
-
 ########
 # Time synchronisation
 
-- name: Set default NTP service name
-  set_fact:
-    ntp_service: ntp
-    ntp_service_state: "started"
-
-- name: Set NTP service name (CentOS)
-  set_fact:
-    ntp_service: ntpd
-  when: ansible_distribution == "CentOS"
-
-- name: Update NTP configuration
-  template:
-    dest: /etc/ntp.conf
-    group: root
-    owner: root
-    mode: 0644
-    src: ntp.conf.j2
-  register: ntp_config
-
-- name: NTP refresh
-  set_fact:
-    ntp_service_state: "restarted"
-  when: ntp_config.changed
-
-- name: NTP Service Enable
-  service:
-    name: "{{ ntp_service }}"
-    state: "{{ ntp_service_state }}"
-    enabled: yes
+- name: Time synchronisation
+  include_tasks: ntpd.yml
 
 ########
 # Vim Configuration
@@ -289,31 +163,6 @@
     owner: root
     group: root
     mode: "0644"
-
-########
-# Enable services
-
-- name: Enable services (Ubuntu)
-  service:
-    name: "{{ item }}"
-    state: started
-    enabled: true
-  loop:
-    - netfilter-persistent
-    - ssh
-    - ntp
-  when: ansible_distribution == "Ubuntu"
-
-- name: Enable services (CentOS)
-  service:
-    name: "{{ item }}"
-    state: started
-    enabled: true
-  loop:
-    - iptables
-    - sshd
-    - ntpd
-  when: ansible_distribution == "CentOS"
 
 ########
 # Configure user accounts

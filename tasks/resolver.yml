@@ -1,0 +1,44 @@
+---
+
+- name: Resolver file stat
+  stat:
+    path: /etc/resolv.conf
+  register: resolver_file_state
+
+- name: Remove /etc/resolv.conf (link)
+  when: resolver_file_state.stat.islnk | default(true)
+  include_task: resolver_replace.yml
+
+- name: resolver domain
+  lineinfile:
+    path: /etc/resolv.conf
+    regexp: "^domain "
+    line: "domain {{ resolver_domain }}"
+    state: present
+  when: resolver_domain is defined
+
+- name: resolver search
+  lineinfile:
+    path: /etc/resolv.conf
+    regexp: "^search "
+    line: "search {{ resolv_search }}"
+    state: present
+  when: resolver_search is defined
+
+- name: resolver nameservers (purge)
+  lineinfile:
+    path: /etc/resolv.conf
+    regexp: "^nameserver"
+    state: absent
+  when: resolver_nameservers is defined
+
+- name: resolver nameservers (set)
+  lineinfile:
+    path: /etc/resolv.conf
+    regexp: "^nameserver {{ item }}$"
+    line: "nameserver {{ item }}"
+    state: absent
+  when: resolver_nameservers is defined
+  loop: "{{ resolver_nameservers }}"
+
+...

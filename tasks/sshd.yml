@@ -1,0 +1,83 @@
+---
+
+- name: Ensure groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - remotessh
+
+- name: sshd config file
+  file:
+    path: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0644
+
+##
+# Port configuration
+- name: sshd port configuration
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^Port "
+    line: "Port 4000"
+    state: present
+  register: config
+
+- name: Trigger restart
+  set_fact:
+    ssh_service_state: "restarted"
+  when: config.changed
+
+##
+# Allowed Groups
+- name: sshd port configuration
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^AllowedGroups "
+    line: "AllowedGroups remotessh"
+    state: present
+  register: config
+
+- name: Trigger restart
+  set_fact:
+    ssh_service_state: "restarted"
+  when: config.changed
+
+##
+# Allowed Groups
+- name: sshd port configuration
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin "
+    line: "PermitRootLogin no"
+    state: present
+  register: config
+
+- name: Trigger restart
+  set_fact:
+    ssh_service_state: "restarted"
+  when: config.changed
+
+##
+# Password authentication
+- name: sshd port configuration
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication "
+    line: "PasswordAuthentication yes"
+    state: present
+  register: config
+
+- name: Trigger restart
+  set_fact:
+    ssh_service_state: "restarted"
+  when: config.changed
+
+- name: SSH Server Enabled
+  service:
+    name: "{{ ssh_service }}"
+    enabled: yes
+    state: "{{ ssh_service_state }}"
+
+...

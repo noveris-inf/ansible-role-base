@@ -1,0 +1,32 @@
+---
+
+- name: Ensure groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - sudo
+    - wheel
+    - npwsudo
+
+- name: Configure nopassword sudoers file
+  copy:
+    src: npwsudo
+    dest: /etc/sudoers.d/npwsudo
+    owner: root
+    group: root
+    mode: "0640"
+
+- name: Remove cloud-init sudoers
+  file:
+    path: /etc/sudoers.d/90-cloud-init-users
+    state: absent
+
+- name: /etc/sudoers include
+  lineinfile:
+    path: /etc/sudoers
+    regexp: "^#includedir /etc/sudoers.d$"
+    line: "#includedir /etc/sudoers.d"
+    state: present
+
+...
