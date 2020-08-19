@@ -7,7 +7,7 @@
 
 - name: Remove /etc/resolv.conf (link)
   when: resolver_file_state.stat.islnk | default(true)
-  include_task: resolver_replace.yml
+  include_tasks: resolver_replace.yml
 
 - name: resolver domain
   lineinfile:
@@ -21,7 +21,7 @@
   lineinfile:
     path: /etc/resolv.conf
     regexp: "^search "
-    line: "search {{ resolv_search }}"
+    line: "search {{ resolver_search }}"
     state: present
   when: resolver_search is defined
 
@@ -37,7 +37,7 @@
     path: /etc/resolv.conf
     regexp: "^nameserver {{ item }}$"
     line: "nameserver {{ item }}"
-    state: absent
+    state: present
   when: resolver_nameservers is defined
   loop: "{{ resolver_nameservers }}"
 

@@ -12,7 +12,7 @@
 # Configure hostname
 
 - name: Configure hostname
-  when: update_hostname is true
+  when: "update_hostname | default(false)"
   hostname:
     name: "{{ inventory_hostname }}"
 
@@ -141,6 +141,7 @@
 
 - name: Time synchronisation
   include_tasks: ntpd.yml
+  when: time_sources is defined
 
 ########
 # Vim Configuration

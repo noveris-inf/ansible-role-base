@@ -1,18 +1,15 @@
 ---
 
-- name: Create resolv.conf.temp
-  command: touch /etc/resolv.conf.temp
-
 - name: resolve.temp permissions
   file:
     path: /etc/resolv.conf.temp
     owner: root
     group: root
     mode: 0644
-    state: file
+    state: touch
 
 - name: Save resolv.conf
-  command: cat /etc/resolv.conf > /etc/resolv.conf.temp
+  shell: "cat /etc/resolv.conf > /etc/resolv.conf.temp"
 
 - name: Remove resolv.conf
   file:
