@@ -38,8 +38,8 @@
 - name: sshd port configuration
   lineinfile:
     path: /etc/ssh/sshd_config
-    regexp: "^AllowedGroups "
-    line: "AllowedGroups remotessh"
+    regexp: "^AllowGroups "
+    line: "AllowGroups remotessh"
     state: present
   register: config
 
@@ -49,7 +49,7 @@
   when: config.changed
 
 ##
-# Allowed Groups
+# Disable remote root login
 - name: sshd port configuration
   lineinfile:
     path: /etc/ssh/sshd_config
