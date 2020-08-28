@@ -39,8 +39,8 @@
     url: https://packages.microsoft.com/keys/microsoft.asc
     state: present
   environment:
-    http_proxy: "{{ lookup('env', 'HTTP_PROXY') | default('') }}"
-    https_proxy: "{{ lookup('env', 'HTTPS_PROXY') | default('') }}"
+    http_proxy: "{{ http_proxy | default('') }}"
+    https_proxy: "{{ https_proxy | default('') }}"
   when: ansible_distribution == "Ubuntu"
 
 - name: Install PowerShell Repo (Ubuntu)
