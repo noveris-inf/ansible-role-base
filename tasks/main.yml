@@ -38,6 +38,9 @@
   apt_key:
     url: https://packages.microsoft.com/keys/microsoft.asc
     state: present
+  environment:
+    http_proxy: "{{ lookup('env', 'HTTP_PROXY') | default('') }}"
+    https_proxy: "{{ lookup('env', 'HTTPS_PROXY') | default('') }}"
   when: ansible_distribution == "Ubuntu"
 
 - name: Install PowerShell Repo (Ubuntu)
