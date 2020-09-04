@@ -183,6 +183,9 @@
 - name: Configure trusted keys
   with_dict: "{{ trusted_keys }}"
   when: trusted_keys is defined
-  include_tasks: user="{{ item.key }}" user_keys="{{ item.value }}" "{{ playbook_dir }}/lib/trustedkeys.yml"
+  include_tasks: "{{ playbook_dir }}/lib/trustedkeys.yml"
+  vars:
+    user: "{{ item.key }}"
+    user_keys: "{{ item.value }}"
 
 ...
