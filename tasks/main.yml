@@ -60,7 +60,6 @@
       - rsync
       - software-properties-common
       - python3
-      - python-pip
       - apt-transport-https
       - ca-certificates
       - parted
