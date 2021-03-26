@@ -71,6 +71,7 @@
       - sudo
       - zfsutils-linux
       - powershell
+      - netscript-ipfilter
   when: ansible_distribution == "Ubuntu"
 
 - name: Install Packages (CentOS)
