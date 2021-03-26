@@ -136,6 +136,20 @@
     enabled: yes
   when: ansible_distribution == "CentOS"
 
+- name: Start open-vm-tools service (Ubuntu)
+  service:
+    name: open-vm-tools
+    state: started
+  failed_when: false
+  when: ansible_distribution == "Ubuntu"
+
+- name: Start open-vm-tools service (CentOS)
+  service:
+    name: vmtoolsd
+    state: started
+  failed_when: false
+  when: ansible_distribution == "CentOS"
+
 ########
 # Time synchronisation
 
