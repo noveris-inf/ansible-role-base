@@ -14,7 +14,7 @@
 - name: Configure hostname
   when: "update_hostname | default(false)"
   hostname:
-    name: "{{ inventory_hostname }}"
+    name: "{{ inventory_hostname | replace('_', '-') }}"
 
 ########
 # SELinux configuration

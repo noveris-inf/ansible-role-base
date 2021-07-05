@@ -18,24 +18,28 @@
     group: root
     mode: 0644
 
+- name: Determine operational ssh port
+  set_fact:
+    operational_ansible_ssh_port: "{{ desired_ansible_ssh_port | default(22) }}"
+
 ##
 # Port configuration
-#- name: sshd port configuration
-#  lineinfile:
-#    path: /etc/ssh/sshd_config
-#    regexp: "^Port "
-#    line: "Port 4000"
-#    state: present
-#  register: config
+- name: SSH Port
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^Port "
+    line: "Port {{ operational_ansible_ssh_port }}"
+    state: present
+  register: config
 
-#- name: Trigger restart
-#  set_fact:
-#    ssh_service_state: "restarted"
-#  when: config.changed
+- name: Trigger restart
+  set_fact:
+    ssh_service_state: "restarted"
+  when: config.changed
 
 ##
 # Allowed Groups
-- name: sshd port configuration
+- name: SSH AllowGroups
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "^AllowGroups "
@@ -50,7 +54,7 @@
 
 ##
 # Disable remote root login
-- name: sshd port configuration
+- name: SSH PermitRootLogin
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "^PermitRootLogin "
@@ -65,7 +69,7 @@
 
 ##
 # Password authentication
-- name: sshd port configuration
+- name: SSH PasswordAuthentication
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "^PasswordAuthentication "
@@ -83,5 +87,9 @@
     name: sshd
     enabled: yes
     state: "{{ ssh_service_state }}"
+
+- name: Set ssh port to what was configured
+  set_fact:
+    ansible_ssh_port: "{{ operational_ansible_ssh_port }}"
 
 ...
