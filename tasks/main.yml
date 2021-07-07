@@ -17,6 +17,39 @@
     name: "{{ inventory_hostname | replace('_', '-') }}"
 
 ########
+# Configure user accounts
+
+- name: Ensure groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - remotessh
+    - sudo
+    - wheel
+    - npwsudo
+
+- name: Configure admin user accounts
+  user:
+    name: "{{ item }}"
+    create_home: yes
+    append: true
+    group: "{{ item }}"
+    groups: sudo,wheel,remotessh,npwsudo
+    shell: /bin/bash
+    state: present
+  loop: "{{ admin_users }}"
+  when: admin_users is defined
+
+- name: Configure trusted keys
+  with_dict: "{{ trusted_keys }}"
+  when: trusted_keys is defined
+  include_tasks: "{{ playbook_dir }}/lib/trustedkeys.yml"
+  vars:
+    user: "{{ item.key }}"
+    user_keys: "{{ item.value }}"
+
+########
 # SELinux configuration
 
 - name: Disable SELinux (Config) (CentOS)
@@ -178,28 +211,5 @@
     owner: root
     group: root
     mode: "0644"
-
-########
-# Configure user accounts
-
-- name: Configure admin user accounts
-  user:
-    name: "{{ item }}"
-    create_home: yes
-    append: true
-    group: "{{ item }}"
-    groups: sudo,wheel,remotessh,npwsudo
-    shell: /bin/bash
-    state: present
-  loop: "{{ admin_users }}"
-  when: admin_users is defined
-
-- name: Configure trusted keys
-  with_dict: "{{ trusted_keys }}"
-  when: trusted_keys is defined
-  include_tasks: "{{ playbook_dir }}/lib/trustedkeys.yml"
-  vars:
-    user: "{{ item.key }}"
-    user_keys: "{{ item.value }}"
 
 ...

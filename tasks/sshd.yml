@@ -4,13 +4,6 @@
   set_fact:
     ssh_service_state: "started"
 
-- name: Ensure groups exist
-  group:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - remotessh
-
 - name: sshd config file
   file:
     path: /etc/ssh/sshd_config
