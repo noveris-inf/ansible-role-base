@@ -16,6 +16,14 @@
   hostname:
     name: "{{ inventory_hostname | replace('_', '-') }}"
 
+- name: hosts file entry
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
+    line: "127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
+    state: present
+  when: resolver_search is defined
+
 ########
 # Configure user accounts
 
