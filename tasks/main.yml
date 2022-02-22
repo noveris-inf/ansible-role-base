@@ -83,7 +83,7 @@
 
 - name: Install PowerShell Repo (Ubuntu)
   apt:
-    deb: https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+    deb: https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
   when: ansible_distribution == "Ubuntu"
 
 - name: Update Apt cache
