@@ -1,19 +1,10 @@
 ---
 
-- name: Install Packages (Ubuntu)
+- name: Install Packages
   apt:
     state: present
     name:
       - iptables-persistent
-  when: ansible_distribution == "Ubuntu"
-
-- name: Install Packages (CentOS)
-  yum:
-    state: present
-    name:
-      - iptables-services
-  when: ansible_distribution == "CentOS"
-
 
 - name: Remove Packages
   package:
@@ -22,28 +13,55 @@
       - ufw
       - firewalld
 
-- name: Configure base firewall
-  include_tasks: "{{ playbook_dir }}/lib/firewall-base.yml"
+- name: iptables - allow loopback
+  iptables:
+    chain: INPUT
+    in_interface: lo+
+    jump: ACCEPT
 
-- name: Save Firewall Configuration
-  include_tasks: "{{ playbook_dir}}/lib/firewall-save.yml"
+- name: iptables - allow established and related
+  iptables:
+    chain: INPUT
+    ctstate: [ 'ESTABLISHED', 'RELATED' ]
+    jump: ACCEPT
+    action: insert
+
+- name: iptables - allow tcp/22
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: 22
+    jump: ACCEPT
+
+- name: iptables - allow tcp/4000
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: 4000
+    jump: ACCEPT
+
+- name: iptables - Default INPUT policy - DROP
+  iptables:
+    chain: INPUT
+    policy: DROP
+
+- name: iptables - Default FORWARD policy - DROP
+  iptables:
+    chain: FORWARD
+    policy: DROP
+
+- name: iptables - Allow ICMP
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: icmp
+
+- name: Save iptables configuration
+  shell: iptables-save > /etc/iptables/rules.v4
+  changed_when: false
 
 - name: Enable services (Ubuntu)
   service:
-    name: "{{ item }}"
+    name: netfilter-persistent
     state: started
     enabled: true
-  loop:
-    - netfilter-persistent
-  when: ansible_distribution == "Ubuntu"
-
-- name: Enable services (CentOS)
-  service:
-    name: "{{ item }}"
-    state: started
-    enabled: true
-  loop:
-    - iptables
-  when: ansible_distribution == "CentOS"
-
-...

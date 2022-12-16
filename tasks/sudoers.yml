@@ -11,7 +11,8 @@
 
 - name: Configure nopassword sudoers file
   copy:
-    src: npwsudo
+    content: |
+      %npwsudo ALL=(ALL:ALL) NOPASSWD:ALL
     dest: /etc/sudoers.d/npwsudo
     owner: root
     group: root
@@ -28,5 +29,3 @@
     regexp: "^#includedir /etc/sudoers.d$"
     line: "#includedir /etc/sudoers.d"
     state: present
-
-...

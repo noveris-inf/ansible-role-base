@@ -1,4 +1,0 @@
-startup_message off
-shell -/bin/bash
-hardstatus alwayslastline
-hardstatus string "%w"

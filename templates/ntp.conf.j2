@@ -8,7 +8,6 @@ restrict -4 default kod notrap nomodify nopeer noquery limited
 restrict -6 default kod notrap nomodify nopeer noquery limited
 restrict source notrap nomodify noquery
 
-{% for item in time_sources %}
+{% for item in time_sources|default([]) %}
 pool {{ item }} iburst
 {% endfor %}
-

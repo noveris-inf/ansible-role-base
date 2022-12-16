@@ -1,44 +1,21 @@
 ---
 
+# Check if the resolve file is a symlink and if so, replace it
 - name: Resolver file stat
   stat:
     path: /etc/resolv.conf
   register: resolver_file_state
 
-- name: Remove /etc/resolv.conf (link)
-  when: resolver_file_state.stat.islnk | default(true)
-  include_tasks: resolver_replace.yml
-
-- name: resolver domain
-  lineinfile:
+- name: Remove existing resolv
+  file:
     path: /etc/resolv.conf
-    regexp: "^domain "
-    line: "domain {{ resolver_domain }}"
-    state: present
-  when: resolver_domain is defined
-
-- name: resolver search
-  lineinfile:
-    path: /etc/resolv.conf
-    regexp: "^search "
-    line: "search {{ resolver_search }}"
-    state: present
-  when: resolver_search is defined
-
-- name: resolver nameservers (purge)
-  lineinfile:
-    path: /etc/resolv.conf
-    regexp: "^nameserver"
     state: absent
-  when: resolver_nameservers is defined
+  when: resolver_file_state.stat.islnk | default(true)
 
-- name: resolver nameservers (set)
-  lineinfile:
-    path: /etc/resolv.conf
-    regexp: "^nameserver {{ item }}$"
-    line: "nameserver {{ item }}"
-    state: present
-  when: resolver_nameservers is defined
-  loop: "{{ resolver_nameservers }}"
-
-...
+- name: Configure resolv.conf
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644

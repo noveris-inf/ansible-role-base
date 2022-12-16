@@ -1,16 +1,16 @@
 ---
 
+# Ensure we are running Ubuntu
+- name: Ubuntu distribution check
+  fail:
+    msg: "Only ubuntu is supported for this role"
+  when: ansible_distribution != 'Ubuntu'
 
-########
 # Configure DNS resolution
-
 - name: Resolver configuration
-  when: resolver_domain is defined or resolver_search is defined or resolver_nameservers is defined
   include_tasks: "resolver.yml"
 
-########
 # Configure hostname
-
 - name: Configure hostname
   when: "update_hostname | default(false)"
   hostname:
@@ -22,11 +22,8 @@
     regexp: "^127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
     line: "127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
     state: present
-  when: resolver_search is defined
 
-########
 # Configure user accounts
-
 - name: Ensure groups exist
   group:
     name: "{{ item }}"
@@ -43,11 +40,14 @@
     create_home: yes
     append: true
     group: "{{ item }}"
-    groups: sudo,wheel,remotessh,npwsudo
+    groups:
+      - sudo
+      - wheel
+      - remotessh
+      - npwsudo
     shell: /bin/bash
     state: present
-  loop: "{{ admin_users }}"
-  when: admin_users is defined
+  loop: "{{ admin_users|default([]) }}"
 
 - name: Configure trusted keys
   with_dict: "{{ trusted_keys }}"
@@ -57,43 +57,23 @@
     user: "{{ item.key }}"
     user_keys: "{{ item.value }}"
 
-########
-# SELinux configuration
-
-- name: Disable SELinux (Config) (CentOS)
-  lineinfile:
-    path: /etc/selinux/config
-    regexp: "^SELINUX="
-    line: "SELINUX=permissive"
-    state: present
-  when: ansible_distribution == "CentOS"
-
-- name: Disable SELinux (Oper) (CentOS)
-  command: /sbin/setenforce 0
-  when: ansible_distribution == "CentOS"
-
-##
 # Install packages
-
-- name: Microsoft Ubuntu signing key install (Ubuntu)
+- name: Microsoft Ubuntu signing key install
   apt_key:
     url: https://packages.microsoft.com/keys/microsoft.asc
     state: present
-  when: ansible_distribution == "Ubuntu"
 
-- name: Install PowerShell Repo (Ubuntu)
+- name: Install PowerShell Repo
   apt:
-    deb: https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-  when: ansible_distribution == "Ubuntu"
+    deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
 
 - name: Update Apt cache
   apt:
     update_cache: yes
   ignore_errors: true
   changed_when: false
-  when: ansible_distribution == "Ubuntu"
 
-- name: Install Packages (Ubuntu)
+- name: Install Packages
   apt:
     state: present
     name:
@@ -113,111 +93,71 @@
       - zfsutils-linux
       - powershell
       - netscript-ipfilter
-  when: ansible_distribution == "Ubuntu"
 
-- name: Install Packages (CentOS)
-  yum:
-    state: present
-    name:
-      - curl
-      - rsync
-      - lsof
-      - vim
-      - screen
-      - sudo
-      - open-vm-tools
-  when: ansible_distribution == "CentOS"
-
-##
 # Remove packages
-
 - name: Remove Packages
   package:
     state: absent
     name:
       - cloud-init
 
-##
 # Base Firewall configuration
 - name: Iptables configuration
   include_tasks: iptables.yml
 
-##
 # Sudoers configuration
-
 - name: Sudoers configuration
   include_tasks: sudoers.yml
 
-##
 # SSH Configuration
-
 - name: sshd configuration
   include_tasks: sshd.yml
 
-########
 # Timezone configuration
-
 - name: Set timezone
   timezone:
     name: "{{ timezone }}"
-  when: "timezone is defined"
+  when: timezone|default("") != ""
 
-########
 # VM Tools Configuration
+- block:
+    - name: Enable open-vm-tools service
+      service:
+        name: open-vm-tools
+        enabled: yes
 
-- name: Enable open-vm-tools service (Ubuntu)
-  service:
-    name: open-vm-tools
-    enabled: yes
-  when: ansible_distribution == "Ubuntu"
+    - name: Start open-vm-tools service
+      service:
+        name: open-vm-tools
+        state: started
+      failed_when: false
+  when: ansible_virtualisation_role|default("") == "guest"
 
-- name: Enable open-vm-tools service (CentOS)
-  service:
-    name: vmtoolsd
-    enabled: yes
-  when: ansible_distribution == "CentOS"
-
-- name: Start open-vm-tools service (Ubuntu)
-  service:
-    name: open-vm-tools
-    state: started
-  failed_when: false
-  when: ansible_distribution == "Ubuntu"
-
-- name: Start open-vm-tools service (CentOS)
-  service:
-    name: vmtoolsd
-    state: started
-  failed_when: false
-  when: ansible_distribution == "CentOS"
-
-########
-# Time synchronisation
-
-- name: Time synchronisation
+# NTP Configuration
+- name: NTP Configuration
   include_tasks: ntpd.yml
-  when: time_sources is defined
 
-########
 # Vim Configuration
-
 - name: Vim Configuration Global
   copy:
     dest: /etc/vim/vimrc.local
-    src: vimrc.local
+    content: |
+      set ai
+      set sw=2
+      set expandtab
     owner: root
     group: root
     mode: "0644"
 
-##
 # Screen Configuration
-
 - name: Configure screen
   copy:
-    src: screenrc
+    content: |
+      startup_message off
+      shell -/bin/bash
+      hardstatus alwayslastline
+      hardstatus string "%w"
     dest: /etc/screenrc
     owner: root
     group: root
     mode: "0644"
-
-...

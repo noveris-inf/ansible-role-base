@@ -1,7 +1,11 @@
-domain {{ resolv_domain }}
-search {{ resolv_search }}
+{% if resolver_domain|default('') != '' %}
+domain {{ resolver_domain }}
+{% endif %}
 
-{% for item in resolv_nameservers %}
+{% if resolver_search|default('') != '' %}
+search {{ resolver_search }}
+{% endif %}
+
+{% for item in resolver_nameservers|default([]) %}
 nameserver {{ item }}
 {% endfor %}
-
