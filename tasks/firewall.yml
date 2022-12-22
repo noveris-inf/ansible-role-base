@@ -1,0 +1,53 @@
+---
+
+- name: Install Packages
+  apt:
+    state: present
+    name:
+      - ufw
+
+- name: Remove Packages
+  package:
+    state: absent
+    name:
+      - firewalld
+      - iptables-persistent
+
+- name: ufw - Allow loopback
+  ufw:
+    rule: allow
+    interface: lo+
+    direction: in
+
+- name: ufw - allow ssh
+  ufw:
+    rule: allow
+    proto: tcp
+    to_port: 22
+    direction: in
+
+# Default policies
+- name: ufw - default policy in
+  ufw:
+    policy: reject
+    direction: incoming
+
+- name: ufw - default policy out
+  ufw:
+    policy: allow
+    direction: outgoing
+
+- name: ufw - default policy routed
+  ufw:
+    policy: reject
+    direction: routed
+
+# UFW service
+- name: ufw service
+  service:
+    name: ufw
+    enabled: true
+
+- name: ufw enable
+  shell: /usr/sbin/ufw enable < /dev/null
+  changed_when: false

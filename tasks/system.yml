@@ -1,0 +1,34 @@
+---
+
+# Configure hostname
+- name: Configure hostname
+  when: "update_hostname | default(false)"
+  hostname:
+    name: "{{ inventory_hostname | replace('_', '-') }}"
+
+- name: hosts file entry
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
+    line: "127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
+    state: present
+
+# Timezone configuration
+- name: Set system timezone
+  timezone:
+    name: "{{ system_timezone }}"
+  when: system_timezone|default("") != ""
+
+# Locale configuration
+- block:
+    - name: Current locale configuration
+      command: "localectl status"
+      register: locale_status
+      changed_when: false
+
+    - name: Configure Locale
+      shell: "localectl set-locale {{ system_locale }} && localectl status"
+      register: locale_update
+      changed_when: locale_status.stdout != locale_update.stdout
+  when:
+    - system_locale|default('') != ''

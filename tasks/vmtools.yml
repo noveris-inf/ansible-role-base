@@ -1,0 +1,19 @@
+---
+
+- name: Install Packages
+  apt:
+    state: present
+    name:
+      - open-vm-tools
+
+- name: Enable open-vm-tools service
+  service:
+    name: open-vm-tools
+    enabled: yes
+
+- name: Start open-vm-tools service
+  service:
+    name: open-vm-tools
+    state: started
+  changed_when: false
+  failed_when: false

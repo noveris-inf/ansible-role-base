@@ -1,0 +1,26 @@
+---
+
+- name: Update Apt cache
+  apt:
+    update_cache: yes
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Packages
+  apt:
+    state: present
+    name:
+      - software-properties-common
+      - python3
+      - apt-transport-https
+      - ca-certificates
+      - parted
+      - sudo
+      - zfsutils-linux
+
+# Remove packages
+- name: Remove Packages
+  package:
+    state: absent
+    name:
+      - cloud-init

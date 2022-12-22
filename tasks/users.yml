@@ -1,0 +1,61 @@
+---
+
+- name: Ensure base groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - remotessh
+    - sudo
+    - wheel
+    - npwsudo
+    - adm
+
+- name: Configure user accounts
+  user:
+    name: "{{ user_spec.name }}"
+    create_home: yes
+    append: false
+    group: "{{ user_spec.name }}"
+    groups: "{{ user_spec.groups|default([]) }}"
+    shell: "{{ user_spec.shell|default('/bin/bash') }}"
+    state: "{{ user_spec.state|default('present') }}"
+  loop_control:
+    loop_var: user_spec
+  loop: "{{ user_list|default([]) }}"
+
+- name: Configure user home directory
+  file:
+    state: directory
+    path: "/home/{{ user_spec.name }}"
+    owner: "{{ user_spec.name }}"
+    group: "{{ user_spec.name }}"
+    mode: 0700
+  loop_control:
+    loop_var: user_spec
+  loop: "{{ user_list }}"
+  when:
+    - user_spec.state|default('present') == 'present'
+
+- name: Configure user .ssh directory
+  file:
+    state: directory
+    path: "/home/{{ user_spec.name }}/.ssh"
+    owner: "{{ user_spec.name }}"
+    group: "{{ user_spec.name }}"
+    mode: 0700
+  loop_control:
+    loop_var: user_spec
+  loop: "{{ user_list }}"
+  when:
+    - user_spec.state|default('present') == 'present'
+
+- name: Configure user authorised keys
+  authorized_key:
+    user: "{{ user_spec.0.name }}"
+    key: "{{ user_spec.1 }}"
+  when:
+    - user_spec.state|default('present') == 'present'
+  loop: "{{ user_list | subelements('ssh_keys', skip_missing=True) }}"
+  loop_control:
+    loop_var: user_spec

@@ -1,0 +1,53 @@
+---
+
+- name: Microsoft Ubuntu signing key install
+  apt_key:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+
+- name: Install PowerShell Repo
+  apt:
+    deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
+
+- name: Update Apt cache
+  apt:
+    update_cache: yes
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Packages
+  apt:
+    state: present
+    name:
+      - vim
+      - screen
+      - curl
+      - rsync
+      - lsof
+      - git
+      - powershell
+
+# Vim Configuration
+- name: Vim Configuration Global
+  copy:
+    dest: /etc/vim/vimrc.local
+    content: |
+      set ai
+      set sw=2
+      set expandtab
+    owner: root
+    group: root
+    mode: "0644"
+
+# Screen Configuration
+- name: Configure screen
+  copy:
+    content: |
+      startup_message off
+      shell -/bin/bash
+      hardstatus alwayslastline
+      hardstatus string "%w"
+    dest: /etc/screenrc
+    owner: root
+    group: root
+    mode: "0644"

@@ -1,13 +1,9 @@
 ---
 
-- name: Ensure groups exist
+- name: nopassword sudoers group
   group:
-    name: "{{ item }}"
+    name: npwsudo
     state: present
-  loop:
-    - sudo
-    - wheel
-    - npwsudo
 
 - name: Configure nopassword sudoers file
   copy:
@@ -22,6 +18,14 @@
   file:
     path: /etc/sudoers.d/90-cloud-init-users
     state: absent
+
+- name: sudoers include directory
+  file:
+    state: directory
+    path: /etc/sudoers.d
+    owner: root
+    group: root
+    mode: 0755
 
 - name: /etc/sudoers include
   lineinfile:

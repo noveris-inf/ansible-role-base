@@ -11,99 +11,20 @@
   include_tasks: "resolver.yml"
 
 # Configure hostname
-- name: Configure hostname
-  when: "update_hostname | default(false)"
-  hostname:
-    name: "{{ inventory_hostname | replace('_', '-') }}"
-
-- name: hosts file entry
-  lineinfile:
-    path: /etc/hosts
-    regexp: "^127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
-    line: "127.0.0.1 {{ inventory_hostname | replace('_', '-') }}"
-    state: present
-
-# Configure user accounts
-- name: Ensure groups exist
-  group:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - remotessh
-    - sudo
-    - wheel
-    - npwsudo
-
-- name: Configure admin user accounts
-  user:
-    name: "{{ item }}"
-    create_home: yes
-    append: true
-    group: "{{ item }}"
-    groups:
-      - sudo
-      - wheel
-      - remotessh
-      - npwsudo
-    shell: /bin/bash
-    state: present
-  loop: "{{ admin_users|default([]) }}"
-
-- name: Configure trusted keys
-  with_dict: "{{ trusted_keys }}"
-  when: trusted_keys is defined
-  include_tasks: "{{ playbook_dir }}/lib/trustedkeys.yml"
-  vars:
-    user: "{{ item.key }}"
-    user_keys: "{{ item.value }}"
+- name: System configuration
+  include_tasks: "system.yml"
 
 # Install packages
-- name: Microsoft Ubuntu signing key install
-  apt_key:
-    url: https://packages.microsoft.com/keys/microsoft.asc
-    state: present
+- name: Package configuration
+  include_tasks: packages.yml
 
-- name: Install PowerShell Repo
-  apt:
-    deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
-
-- name: Update Apt cache
-  apt:
-    update_cache: yes
-  ignore_errors: true
-  changed_when: false
-
-- name: Install Packages
-  apt:
-    state: present
-    name:
-      - curl
-      - rsync
-      - software-properties-common
-      - python3
-      - apt-transport-https
-      - ca-certificates
-      - parted
-      - lsof
-      - git
-      - vim
-      - screen
-      - open-vm-tools
-      - sudo
-      - zfsutils-linux
-      - powershell
-      - netscript-ipfilter
-
-# Remove packages
-- name: Remove Packages
-  package:
-    state: absent
-    name:
-      - cloud-init
+# Configure user accounts
+- name: Configure users
+  include_tasks: users.yml
 
 # Base Firewall configuration
-- name: Iptables configuration
-  include_tasks: iptables.yml
+- name: Firewall configuration
+  include_tasks: firewall.yml
 
 # Sudoers configuration
 - name: Sudoers configuration
@@ -113,51 +34,14 @@
 - name: sshd configuration
   include_tasks: sshd.yml
 
-# Timezone configuration
-- name: Set timezone
-  timezone:
-    name: "{{ timezone }}"
-  when: timezone|default("") != ""
-
 # VM Tools Configuration
-- block:
-    - name: Enable open-vm-tools service
-      service:
-        name: open-vm-tools
-        enabled: yes
-
-    - name: Start open-vm-tools service
-      service:
-        name: open-vm-tools
-        state: started
-      failed_when: false
-  when: ansible_virtualisation_role|default("") == "guest"
+- name: VM Tools configuration
+  include_tasks: vmtools.yml
 
 # NTP Configuration
 - name: NTP Configuration
   include_tasks: ntpd.yml
 
-# Vim Configuration
-- name: Vim Configuration Global
-  copy:
-    dest: /etc/vim/vimrc.local
-    content: |
-      set ai
-      set sw=2
-      set expandtab
-    owner: root
-    group: root
-    mode: "0644"
-
-# Screen Configuration
-- name: Configure screen
-  copy:
-    content: |
-      startup_message off
-      shell -/bin/bash
-      hardstatus alwayslastline
-      hardstatus string "%w"
-    dest: /etc/screenrc
-    owner: root
-    group: root
-    mode: "0644"
+# Utility configuration
+- name: Utility configuration
+  include_tasks: utility.yml
