@@ -15,7 +15,7 @@
   user:
     name: "{{ user_spec.name }}"
     create_home: yes
-    append: false
+    append: true
     group: "{{ user_spec.name }}"
     groups: "{{ user_spec.groups|default([]) }}"
     shell: "{{ user_spec.shell|default('/bin/bash') }}"
