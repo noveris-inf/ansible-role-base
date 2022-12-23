@@ -26,6 +26,7 @@
       - lsof
       - git
       - powershell
+      - tmux
 
 # Vim Configuration
 - name: Vim Configuration Global

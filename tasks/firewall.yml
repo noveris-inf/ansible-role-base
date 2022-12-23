@@ -49,5 +49,9 @@
     enabled: true
 
 - name: ufw enable
-  shell: /usr/sbin/ufw enable < /dev/null
+  ufw:
+    state: enabled
+
+- name: ufw enable
+  shell: echo y | /usr/sbin/ufw enable
   changed_when: false
