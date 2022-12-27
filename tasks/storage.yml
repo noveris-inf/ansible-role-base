@@ -1,0 +1,106 @@
+---
+
+- name: Storage Packages Install
+  package:
+    name:
+      - lvm2
+
+# Storage configuration
+- name: VG Physical Volume (PV)
+  lvg:
+    vg: "{{ volume_group_spec.name }}"
+    pvs: "{{ volume_group_spec.pvs }}"
+  loop: "{{ volume_group_specs }}"
+  loop_control:
+    loop_var: "volume_group_spec"
+
+- name: Data Logical Volumes
+  lvol:
+    vg: "{{ local_volume_spec.vg }}"
+    lv: "{{ local_volume_spec.lv }}"
+    size: "{{ local_volume_spec.size }}"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+
+# The file system mount is done twice, due to the permissions and owner configuration
+# When first run, the owner, group and permissions will be set for the directory
+# in the parent filesystem, while on the second run (after mount), the owner, group
+# and permissions will be set for the root directory within the volume mount.
+- name: Filesystem Mount Points (#1)
+  file:
+    path: "{{ local_volume_spec.mount }}"
+    state: directory
+    mode: "{{ local_volume_spec.mode|default('0755') }}"
+    owner: "{{ local_volume_spec.owner|default('root') }}"
+    group: "{{ local_volume_spec.group|default('root') }}"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.mount|default('') != 'none'"
+
+- name: Logical Volume Filesystems
+  filesystem:
+    fstype: "{{ local_volume_spec.type }}"
+    dev: "/dev/{{ local_volume_spec.vg }}/{{ local_volume_spec.lv }}"
+    resizefs: "{{ false if local_volume_spec.type == 'swap' else true }}"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+
+- name: Volume Mount (Filesystem)
+  mount:
+    path: "{{ local_volume_spec.mount }}"
+    src: "/dev/{{ local_volume_spec.vg }}/{{ local_volume_spec.lv }}"
+    fstype: "{{ local_volume_spec.type }}"
+    state: mounted
+  when: "local_volume_spec.type != 'swap'"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+
+- name: Volume Mount (Swap)
+  mount:
+    path: 'none'
+    src: "/dev/{{ local_volume_spec.vg }}/{{ local_volume_spec.lv }}"
+    fstype: "{{ local_volume_spec.type }}"
+    state: present
+    opts: sw
+  when: "local_volume_spec.type == 'swap'"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+
+- name: Swap Check
+  shell: "swapon --show=name,type,size"
+  register: swap_state
+  changed_when: false
+
+- name: Enable Swap (Swap)
+  shell: |
+    RES=$(swapon -a 2>&1)
+    RET=$?
+    if [ $RET -ne 0 ] ; then
+      echo $RES
+      exit 1
+    fi
+    swapon --show=name,type,size
+  register: new_swap_state
+  changed_when: new_swap_state.stdout != swap_state.stdout
+
+# Second run for filesystem mount points - see above comment on filesystem mount #1
+- name: Filesystem Mount Points (#2)
+  file:
+    path: "{{ local_volume_spec.mount }}"
+    state: directory
+    mode: "{{ local_volume_spec.mode|default('0755') }}"
+    owner: "{{ local_volume_spec.owner|default('root') }}"
+    group: "{{ local_volume_spec.group|default('root') }}"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.mount|default('') != 'none'"

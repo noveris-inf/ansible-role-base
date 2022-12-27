@@ -6,6 +6,9 @@
     msg: "Only ubuntu is supported for this role"
   when: ansible_distribution != 'Ubuntu'
 
+- name: Storage configuration
+  include_tasks: storage.yml
+
 # Configure DNS resolution
 - name: Resolver configuration
   include_tasks: "resolver.yml"
