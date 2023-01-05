@@ -1,5 +1,13 @@
 ---
 
+- name: Apt proxy configuration
+  template:
+    src: apt_proxy.j2
+    dest: /etc/apt/apt.conf.d/80-proxy.conf
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Update Apt cache
   apt:
     update_cache: yes
