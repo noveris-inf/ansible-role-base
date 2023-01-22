@@ -11,6 +11,13 @@
     - npwsudo
     - adm
 
+- name: Group for user
+  group:
+    name: "{{ user_spec.name }}"
+  loop_control:
+    loop_var: user_spec
+  loop: "{{ user_list|default([]) }}"
+
 - name: Configure user accounts
   user:
     name: "{{ user_spec.name }}"

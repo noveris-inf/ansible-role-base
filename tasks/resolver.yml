@@ -1,21 +1,24 @@
 ---
 
 # Check if the resolve file is a symlink and if so, replace it
-- name: Resolver file stat
-  stat:
-    path: /etc/resolv.conf
-  register: resolver_file_state
+- when:
+    - update_resolver|default(true) == true
+  block:
+    - name: Resolver file stat
+      stat:
+        path: /etc/resolv.conf
+      register: resolver_file_state
 
-- name: Remove existing resolv
-  file:
-    path: /etc/resolv.conf
-    state: absent
-  when: resolver_file_state.stat.islnk | default(true)
+    - name: Remove existing resolv
+      file:
+        path: /etc/resolv.conf
+        state: absent
+      when: resolver_file_state.stat.islnk | default(true)
 
-- name: Configure resolv.conf
-  template:
-    src: resolv.conf.j2
-    dest: /etc/resolv.conf
-    owner: root
-    group: root
-    mode: 0644
+    - name: Configure resolv.conf
+      template:
+        src: resolv.conf.j2
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        mode: 0644
