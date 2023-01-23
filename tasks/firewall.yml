@@ -23,7 +23,7 @@
   ufw:
     rule: allow
     proto: tcp
-    to_port: 22
+    to_port: "22"
     direction: in
 
 # Default policies

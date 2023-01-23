@@ -9,7 +9,7 @@
       - openssh-sftp-server
 
 # Password authentication
-- name: SSH PasswordAuthentication
+- name: SSH Config Patching
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "{{ ssh_config_patch.regexp }}"
