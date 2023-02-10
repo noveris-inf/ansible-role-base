@@ -1,0 +1,20 @@
+---
+
+- name: Ensure base groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - remotessh
+    - sudo
+    - wheel
+    - npwsudo
+    - adm
+
+- name: Configure groups
+  group:
+    name: "{{ group_name }}"
+    state: present
+  loop: "{{ group_list | default([]) }}"
+  loop_control:
+    loop_var: group_name

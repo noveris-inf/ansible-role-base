@@ -1,16 +1,5 @@
 ---
 
-- name: Ensure base groups exist
-  group:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - remotessh
-    - sudo
-    - wheel
-    - npwsudo
-    - adm
-
 - name: Group for user
   group:
     name: "{{ user_spec.name }}"

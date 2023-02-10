@@ -21,6 +21,10 @@
 - name: Package configuration
   include_tasks: packages.yml
 
+# Configure groups
+- name: Configure groups
+  include_tasks: groups.yml
+
 # Configure user accounts
 - name: Configure users
   include_tasks: users.yml
