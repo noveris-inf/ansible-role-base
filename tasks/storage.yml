@@ -5,6 +5,11 @@
     name:
       - lvm2
 
+# Rescan devices
+- name: Rescan devices
+  command: find /sys/block/ -maxdepth 1 -mindepth 1 -exec sh -c "echo 1 > {}/device/rescan" \;
+  failed_when: false
+
 # Storage configuration
 - name: VG Physical Volume (PV)
   lvg:
@@ -14,11 +19,17 @@
   loop_control:
     loop_var: "volume_group_spec"
 
+# Resize for physical volumes
+- name: Resize PVs
+  command: "/usr/sbin/pvresize {{ item[1] }}"
+  loop: "{{ volume_group_specs | subelements('pvs', skip_missing=True) }}"
+
 - name: Data Logical Volumes
   lvol:
     vg: "{{ local_volume_spec.vg }}"
     lv: "{{ local_volume_spec.lv }}"
     size: "{{ local_volume_spec.size }}"
+    resizefs: "{{ local_volume_spec.resizefs|default(omit) }}"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
