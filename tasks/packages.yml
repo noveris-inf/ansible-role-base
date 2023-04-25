@@ -14,6 +14,21 @@
     state: "{{ 'running' if unattended_upgrade_service_enable else 'stopped' }}"
     enabled: "{{ unattended_upgrade_service_enable }}"
 
+- name: Unattended Upgrade Config
+  lineinfile:
+    path: /etc/apt/apt.conf.d/20auto-upgrades
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - regexp: >-
+        ^APT::Periodic::Unattended-Upgrade.*
+      line: >-
+        APT::Periodic::Unattended-Upgrade "{{ '1' if unattended_upgrade_service_enable else '0' }}";
+    - regexp: >-
+        ^APT::Periodic::Update-Package-Lists.*
+      line: >-
+        APT::Periodic::Update-Package-Lists "{{ '1' if unattended_upgrade_service_enable else '0' }}";
+
 - name: Daily APT Upgrade
   service:
     name: apt-daily-upgrade.timer
