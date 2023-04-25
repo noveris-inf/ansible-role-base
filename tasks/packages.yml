@@ -8,6 +8,18 @@
     group: root
     mode: 0644
 
+- name: Unattended Upgrade Service
+  service:
+    name: unattended-upgrades
+    state: "{{ 'running' if unattended_upgrade_service_enable else 'stopped' }}"
+    enabled: "{{ unattended_upgrade_service_enable }}"
+
+- name: Daily APT Upgrade
+  service:
+    name: apt-daily-upgrade.timer
+    state: "{{ 'running' if apt_daily_upgrade_enable else 'stopped' }}"
+    enabled: "{{ apt_daily_upgrade_enable }}"
+
 - name: Update Apt cache
   apt:
     update_cache: yes
