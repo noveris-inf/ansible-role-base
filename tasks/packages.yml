@@ -19,6 +19,10 @@
     path: /etc/apt/apt.conf.d/20auto-upgrades
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
   loop:
     - regexp: >-
         ^APT::Periodic::Unattended-Upgrade.*
