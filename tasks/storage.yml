@@ -5,9 +5,16 @@
     name:
       - lvm2
 
+# Rescan controllers
+- name: Rescan controllers
+  command: >-
+    find /sys/class/scsi_host/ -maxdepth 1 -mindepth 1 -exec sh -c "echo '- - -' > {}/scan" \;
+  failed_when: false
+
 # Rescan devices
 - name: Rescan devices
-  command: find /sys/block/ -maxdepth 1 -mindepth 1 -exec sh -c "echo 1 > {}/device/rescan" \;
+  command: >-
+    find /sys/block/ -maxdepth 1 -mindepth 1 -exec sh -c "echo 1 > {}/device/rescan" \;
   failed_when: false
 
 # Storage configuration
