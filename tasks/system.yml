@@ -21,6 +21,12 @@
 
 # Locale configuration
 - block:
+    - name: Ensure locales is installed
+      ansible.builtin.apt:
+        name:
+          - locales
+        state: present
+
     - name: Current locale configuration
       command: "localectl status"
       register: locale_status
