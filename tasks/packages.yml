@@ -8,11 +8,15 @@
     group: root
     mode: 0644
 
+- name: Gather service information
+  ansible.builtin.service_facts:
+
 - name: Unattended Upgrade Service
   service:
     name: unattended-upgrades
     state: "{{ 'running' if unattended_upgrade_service_enable else 'stopped' }}"
     enabled: "{{ unattended_upgrade_service_enable }}"
+  when: "'unattended-upgrades.service' in ansible_facts.services"
 
 - name: Unattended Upgrade Config
   lineinfile:
