@@ -68,6 +68,8 @@
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
+  when:
+    - "local_volume_spec.type|default('') != ''"
 
 - name: Volume Mount Options (Filesystem)
   mount:
@@ -76,7 +78,9 @@
     fstype: "{{ local_volume_spec.type }}"
     state: present
     opts: "{{ local_volume_spec.mount_opts | default(omit) }}"
-  when: "local_volume_spec.type != 'swap'"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.type != 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
@@ -88,7 +92,9 @@
     fstype: "{{ local_volume_spec.type }}"
     state: mounted
     opts: "{{ local_volume_spec.mount_opts | default(omit) }}"
-  when: "local_volume_spec.type != 'swap'"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.type != 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
@@ -97,7 +103,9 @@
   ansible.builtin.command:
     cmd: >
       mount -o remount "{{ local_volume_spec.mount }}"
-  when: "local_volume_spec.type != 'swap'"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.type != 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
@@ -109,7 +117,7 @@
     fstype: "{{ local_volume_spec.type }}"
     state: present
     opts: sw
-  when: "local_volume_spec.type == 'swap'"
+  when: "local_volume_spec.type|default('') == 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
@@ -145,3 +153,4 @@
   when:
     - "local_volume_spec.mount|default('') != ''"
     - "local_volume_spec.mount|default('') != 'none'"
+
