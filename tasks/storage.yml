@@ -64,17 +64,48 @@
     fstype: "{{ local_volume_spec.type }}"
     dev: "/dev/{{ local_volume_spec.vg }}/{{ local_volume_spec.lv }}"
     resizefs: "{{ false if local_volume_spec.type == 'swap' else true }}"
+    opts: "{{ local_volume_spec.fs_opts | default(omit) }}"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+  when:
+    - "local_volume_spec.type|default('') != ''"
+
+- name: Volume Mount Options (Filesystem)
+  mount:
+    path: "{{ local_volume_spec.mount }}"
+    src: "/dev/{{ local_volume_spec.vg }}/{{ local_volume_spec.lv }}"
+    fstype: "{{ local_volume_spec.type }}"
+    state: present
+    opts: "{{ local_volume_spec.mount_opts | default(omit) }}"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.type != 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
 
-- name: Volume Mount (Filesystem)
+- name: Volume Mount Actual (Filesystem)
   mount:
     path: "{{ local_volume_spec.mount }}"
     src: "/dev/{{ local_volume_spec.vg }}/{{ local_volume_spec.lv }}"
     fstype: "{{ local_volume_spec.type }}"
     state: mounted
-  when: "local_volume_spec.type != 'swap'"
+    opts: "{{ local_volume_spec.mount_opts | default(omit) }}"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.type != 'swap'"
+  loop: "{{ logical_volume_specs }}"
+  loop_control:
+    loop_var: "local_volume_spec"
+
+- name: Volume Mount Remount (Filesystem)
+  ansible.builtin.command:
+    cmd: >
+      mount -o remount "{{ local_volume_spec.mount }}"
+  when:
+    - "local_volume_spec.mount|default('') != ''"
+    - "local_volume_spec.type != 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
@@ -86,7 +117,7 @@
     fstype: "{{ local_volume_spec.type }}"
     state: present
     opts: sw
-  when: "local_volume_spec.type == 'swap'"
+  when: "local_volume_spec.type|default('') == 'swap'"
   loop: "{{ logical_volume_specs }}"
   loop_control:
     loop_var: "local_volume_spec"
@@ -122,3 +153,4 @@
   when:
     - "local_volume_spec.mount|default('') != ''"
     - "local_volume_spec.mount|default('') != 'none'"
+
