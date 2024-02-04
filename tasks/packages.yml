@@ -59,7 +59,6 @@
       - ca-certificates
       - parted
       - sudo
-      - zfsutils-linux
 
 # Remove packages
 - name: Remove Packages
