@@ -3,5 +3,5 @@
 volume_group_specs: []
 logical_volume_specs: []
 
-unattended_upgrade_service_enable: false
-apt_daily_upgrade_enable: false
+unattended_upgrade_service_enable: true
+apt_daily_upgrade_enable: true
