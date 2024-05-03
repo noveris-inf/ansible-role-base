@@ -14,7 +14,7 @@
 - name: Unattended Upgrade Service
   service:
     name: unattended-upgrades
-    state: "{{ 'running' if unattended_upgrade_service_enable else 'stopped' }}"
+    state: "{{ 'started' if unattended_upgrade_service_enable else 'stopped' }}"
     enabled: "{{ unattended_upgrade_service_enable }}"
   when: "'unattended-upgrades.service' in ansible_facts.services"
 
