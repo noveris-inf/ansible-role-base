@@ -40,7 +40,7 @@
 - name: Daily APT Upgrade
   service:
     name: apt-daily-upgrade.timer
-    state: "{{ 'running' if apt_daily_upgrade_enable else 'stopped' }}"
+    state: "{{ 'started' if apt_daily_upgrade_enable else 'stopped' }}"
     enabled: "{{ apt_daily_upgrade_enable }}"
 
 - name: Update Apt cache
