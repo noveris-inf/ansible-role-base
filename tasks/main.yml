@@ -52,3 +52,8 @@
 # Utility configuration
 - name: Utility configuration
   include_tasks: utility.yml
+
+# SNMP configuration
+- name: SNMP configuration
+  include_tasks: snmp.yml
+  when: snmpd_configure

@@ -1,0 +1,33 @@
+---
+
+# Install SNMP packages
+- name: SNMP packages
+  ansible.builtin.package:
+    name:
+      - snmpd
+      - snmp
+
+- name: SNMP configuration
+  ansible.builtin.copy:
+    content: "{{ snmpd_config_content }}"
+    dest: "/etc/snmp/snmpd.conf"
+    owner: root
+    group: root
+    mode: "0600"
+  register: snmp_config_file_state
+
+- name: SNMP service
+  ansible.builtin.service:
+    name: snmpd
+    state: "{{ 'restarted' if snmp_config_file_state.changed else 'started' }}"
+    enabled: true
+
+- name: Allow SNMPD access (ufw)
+  community.general.ufw:
+    comment: SNMP Port
+    proto: udp
+    rule: allow
+    to_port: "161"
+    direction: in
+  loop: "{{ snmpd_sources }}"
+  when: snmpd_update_ufw

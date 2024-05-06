@@ -5,3 +5,32 @@ logical_volume_specs: []
 
 unattended_upgrade_service_enable: true
 apt_daily_upgrade_enable: true
+
+snmpd_sys_location: somewhere
+snmpd_sys_contact: nobody@example.org
+snmpd_agent_address: "0.0.0.0"
+snmpd_ro_community: public
+snmpd_allowed_oids:
+  - ".1.3.6.1.2.1"
+snmpd_sources:
+  - 127.0.0.1
+snmpd_update_ufw: false
+
+snmpd_configure: false
+snmpd_config_content: |
+  sysLocation    {{ snmpd_sys_location }}
+  sysContact     {{ snmpd_sys_contact }}
+  sysServices    72
+  master         agentx
+  agentaddress   {{ snmpd_agent_address }}
+
+  {% for oid in snmpd_allowed_oids %}
+  view defaultview included {{ oid }}
+  {% endfor %}
+
+  {% for source in snmpd_sources %}
+  rocommunity  {{ snmpd_ro_community }} {{ source }} -V defaultview
+  rocommunity6 {{ snmpd_ro_community }} {{ source }} -V defaultview
+  {% endfor %}
+
+  includeDir /etc/snmp/snmpd.conf.d
