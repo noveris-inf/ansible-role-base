@@ -29,5 +29,6 @@
     rule: allow
     to_port: "161"
     direction: in
+    from_ip: "{{ item }}"
   loop: "{{ snmpd_sources }}"
   when: snmpd_update_ufw
