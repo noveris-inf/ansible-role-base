@@ -34,3 +34,6 @@ snmpd_config_content: |
   {% endfor %}
 
   includeDir /etc/snmp/snmpd.conf.d
+
+maint_patch_schedule: ''
+maint_reboot_schedule: ''

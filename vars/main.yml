@@ -1,0 +1,52 @@
+---
+
+maint_patch_files:
+  - path: /etc/systemd/system/base_patch.timer
+    content: |
+      [Unit]
+      Description=Maint Patch Timer
+
+      [Timer]
+      OnCalendar={{ maint_patch_schedule }}
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+  - path: /etc/systemd/system/base_patch.service
+    content: |
+      [Unit]
+      Description=Maint Patch Service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/base_patch
+  - path: /usr/local/bin/base_patch
+    mode: "0755"
+    content: |
+      #!/bin/bash
+
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update && apt-get upgrade -y && apt-get autoremove -y && exit 0
+
+      exit 1
+
+maint_reboot_files:
+  - path: /etc/systemd/system/base_reboot.timer
+    content: |
+      [Unit]
+      Description=Maint Reboot Timer
+
+      [Timer]
+      OnCalendar={{ maint_reboot_schedule }}
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+  - path: /etc/systemd/system/base_reboot.service
+    content: |
+      [Unit]
+      Description=Maint Reboot Service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/sbin/shutdown -r +5

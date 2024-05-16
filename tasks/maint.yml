@@ -1,0 +1,53 @@
+---
+
+- name: Copy maint reboot files
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ maint_reboot_files }}"
+  when: "maint_reboot_schedule|default('') != ''"
+
+- name: Remove maint reboot files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ maint_reboot_files }}"
+  when: "maint_reboot_schedule|default('') == ''"
+
+- name: Copy maint patch files
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ maint_patch_files }}"
+  when: "maint_patch_schedule|default('') != ''"
+
+- name: Remove maint patch files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ maint_patch_files }}"
+  when: "maint_patch_schedule|default('') == ''"
+
+- name: systemd reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Reboot timer
+  ansible.builtin.systemd:
+    enabled: true
+    state: restarted
+    name: base_reboot.timer
+  when: "maint_reboot_schedule|default('') != ''"
+
+- name: Patch timer
+  ansible.builtin.systemd:
+    enabled: true
+    state: restarted
+    name: base_patch.timer
+  when: "maint_patch_schedule|default('') != ''"

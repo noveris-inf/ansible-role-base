@@ -57,3 +57,6 @@
 - name: SNMP configuration
   include_tasks: snmp.yml
   when: snmpd_configure
+
+- name: Maint Schedule
+  include_tasks: maint.yml
