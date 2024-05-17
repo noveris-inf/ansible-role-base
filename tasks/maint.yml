@@ -44,6 +44,7 @@
     state: restarted
     name: base_reboot.timer
   when: "maint_reboot_schedule|default('') != ''"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Patch timer
   ansible.builtin.systemd:
@@ -51,3 +52,4 @@
     state: restarted
     name: base_patch.timer
   when: "maint_patch_schedule|default('') != ''"
+  ignore_errors: "{{ ansible_check_mode }}"
