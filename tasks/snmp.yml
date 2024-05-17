@@ -21,6 +21,7 @@
     name: snmpd
     state: "{{ 'restarted' if snmp_config_file_state.changed else 'started' }}"
     enabled: true
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Allow SNMPD access (ufw)
   community.general.ufw:
