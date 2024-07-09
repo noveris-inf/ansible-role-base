@@ -1,14 +1,5 @@
 ---
 
-- name: Microsoft Ubuntu signing key install
-  apt_key:
-    url: https://packages.microsoft.com/keys/microsoft.asc
-    state: present
-
-- name: Install PowerShell Repo
-  apt:
-    deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
-
 - name: Update Apt cache
   apt:
     update_cache: yes
@@ -25,7 +16,6 @@
       - rsync
       - lsof
       - git
-      - powershell
       - tmux
 
 # Vim Configuration

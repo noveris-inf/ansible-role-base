@@ -29,6 +29,6 @@
 # SSH service state
 - name: SSH Server Enabled
   service:
-    name: sshd
+    name: ssh
     enabled: yes
     state: "{{ 'restarted' if config.changed else 'started' }}"
