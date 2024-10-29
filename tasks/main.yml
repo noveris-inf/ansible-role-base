@@ -1,11 +1,5 @@
 ---
 
-# Ensure we are running Ubuntu
-- name: Ubuntu distribution check
-  fail:
-    msg: "Only ubuntu is supported for this role"
-  when: ansible_distribution != 'Ubuntu'
-
 - name: Storage configuration
   include_tasks: storage.yml
 
