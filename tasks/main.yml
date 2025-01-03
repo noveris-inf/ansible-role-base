@@ -26,6 +26,7 @@
 # Base Firewall configuration
 - name: Firewall configuration
   include_tasks: firewall.yml
+  when: base_configure_ufw
 
 # Sudoers configuration
 - name: Sudoers configuration

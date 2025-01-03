@@ -23,6 +23,11 @@
     enabled: true
   ignore_errors: "{{ ansible_check_mode }}"
 
+- name: Warning
+  when: "snmpd_update_ufw is defined"
+  ansible.builtin.fail:
+    msg: "snmpd_update_ufw is no longer used"
+
 - name: Allow SNMPD access (ufw)
   community.general.ufw:
     comment: SNMP Port
@@ -32,4 +37,5 @@
     direction: in
     from_ip: "{{ item }}"
   loop: "{{ snmpd_sources }}"
-  when: snmpd_update_ufw
+  when: base_configure_ufw
+

@@ -14,7 +14,6 @@ snmpd_allowed_oids:
   - ".1.3.6.1.2.1"
 snmpd_sources:
   - 127.0.0.1
-snmpd_update_ufw: false
 
 snmpd_configure: false
 snmpd_config_content: |
@@ -37,3 +36,7 @@ snmpd_config_content: |
 
 maint_patch_schedule: ''
 maint_reboot_schedule: ''
+
+# Should we perform ufw base configuration
+base_configure_ufw: true
+

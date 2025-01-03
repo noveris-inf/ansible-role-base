@@ -55,3 +55,4 @@
 - name: ufw enable
   shell: echo y | /usr/sbin/ufw enable
   changed_when: false
+
